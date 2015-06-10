@@ -1,6 +1,7 @@
 package patmat
 
 import common._
+import patmat.Huffman._
 
 /**
  * Assignment 4: Huffman coding
@@ -19,18 +20,28 @@ object Huffman {
    * leaves.
    */
   abstract class CodeTree
-  case class Fork(left: CodeTree, right: CodeTree, chars: List[Char], weight: Int) extends CodeTree
-  case class Leaf(char: Char, weight: Int) extends CodeTree
+  case class Fork(left: CodeTree, right: CodeTree, chars: List[Char], weight: Int) extends CodeTree {
+    override def toString: String = left + "(" + chars.mkString(",") + ")" + weight + right
+  }
+  case class Leaf(char: Char, weight: Int) extends CodeTree {
+    override def toString: String = "[" + char + "]" + weight
+  }
 
 
 
   // Part 1: Basics
 
-  def weight(tree: CodeTree): Int = ??? // tree match ...
+  def weight(tree: CodeTree): Int = tree match {
+    case Fork(left, right, chars, weight) => weight
+    case Leaf(char, weight) => weight
+  }
 
-  def chars(tree: CodeTree): List[Char] = ??? // tree match ...
+  def chars(tree: CodeTree): List[Char] = tree match {
+    case Fork(left, right, chars, weight) => chars
+    case Leaf(char, weight) => char :: Nil
+  }
 
-  def makeCodeTree(left: CodeTree, right: CodeTree) =
+  def makeCodeTree(left: CodeTree, right: CodeTree): CodeTree =
     Fork(left, right, chars(left) ::: chars(right), weight(left) + weight(right))
 
 
@@ -203,4 +214,19 @@ object Huffman {
    * and then uses it to perform the actual encoding.
    */
   def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+}
+
+object Main extends App {
+  def a = Leaf('a', 8)
+  def b = Leaf('b', 3)
+  def c = Leaf('c', 1)
+  def d = Leaf('d', 1)
+  def e = Leaf('e', 1)
+  def f = Leaf('f', 1)
+  def g = Leaf('g', 1)
+  def h = Leaf('h', 1)
+
+  def tree = makeCodeTree(a, makeCodeTree(makeCodeTree(b, makeCodeTree(c, d)), makeCodeTree(makeCodeTree(e, f),makeCodeTree(g, h))))
+
+  println(tree)
 }
