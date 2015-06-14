@@ -82,7 +82,24 @@ object Huffman {
    *       println("integer is  : "+ theInt)
    *   }
    */
-  def times(chars: List[Char]): List[(Char, Int)] = ???
+  def times(chars: List[Char]): List[(Char, Int)] = {
+    def recurseIncrement(target: Char, list: List[(Char, Int)]): List[(Char, Int)] = {
+      list match {
+        case (c, n) :: xs => {
+          if (c == target) (target, n + 1) :: recurseIncrement(target, xs)
+          else (c, n) :: recurseIncrement(target, xs)
+        }
+        case Nil => Nil
+      }
+    }
+
+    if (chars.isEmpty) Nil
+    else {
+      val accumTimes: List[(Char, Int)] = times(chars.tail)
+      if (accumTimes.exists(x => x._1 == chars.head)) recurseIncrement(chars.head, accumTimes)
+      else  (chars.head, 1) :: accumTimes
+    }
+  }
 
   /**
    * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
