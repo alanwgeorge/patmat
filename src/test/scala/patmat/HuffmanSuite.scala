@@ -9,14 +9,35 @@ import patmat.Huffman._
 
 @RunWith(classOf[JUnitRunner])
 class HuffmanSuite extends FunSuite {
+
   trait TestData {
+    def a = Leaf('a', 8)
+
+    def b = Leaf('b', 3)
+
+    def c = Leaf('c', 1)
+
+    def d = Leaf('d', 1)
+
+    def e = Leaf('e', 1)
+
+    def f = Leaf('f', 1)
+
+    def g = Leaf('g', 1)
+
+    def h = Leaf('h', 1)
+
+
     val l1: List[Char] = List('a', 'b', 'a', 'c', 'd', 'a')
-    val codeTree1: CodeTree = Fork(Leaf('a',2), Leaf('b',3), List('a','b'), 5)
-    val codeTree2: CodeTree = Fork(Fork(Leaf('a',2), Leaf('b',3), List('a','b'), 5), Leaf('d',4), List('a','b','d'), 9)
-    val codeTree3: CodeTree = Fork(Leaf('a', 8), Fork(Fork(Leaf('b', 3), Fork(Leaf('c', 1), Leaf('d', 1), List('c', 'd'), 2), List('b', 'c', 'd'), 5), Fork(Fork(Leaf('e', 1), Leaf('f', 1), List('e', 'f'), 2), Fork(Leaf('g', 1), Leaf('h', 1), List('g', 'h'), 2), List('e', 'f', 'g', 'h'), 4), List('b', 'c', 'd', 'e', 'f', 'g', 'h'), 9), List('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'), 17)
+    val codeTree1: CodeTree = Fork(Leaf('a', 2), Leaf('b', 3), List('a', 'b'), 5)
+    val codeTree2: CodeTree = Fork(Fork(Leaf('a', 2), Leaf('b', 3), List('a', 'b'), 5), Leaf('d', 4), List('a', 'b', 'd'), 9)
+    val codeTree3 = makeCodeTree(a, makeCodeTree(makeCodeTree(b, makeCodeTree(c, d)), makeCodeTree(makeCodeTree(e, f), makeCodeTree(g, h))))
     val leafList1: List[Leaf] = List(Leaf('a', 1))
     val leafList2: List[Leaf] = List(Leaf('a', 2), Leaf('b', 3), Leaf('c', 4), Leaf('z', 8), Leaf('g', 10), Leaf('h', 12))
     val leaflist3 = List(Leaf('e', 1), Leaf('t', 2), Leaf('x', 4))
+
+
+    val table1: CodeTable = List(('a', List(1, 1, 1)), ('b', List(1, 0, 1)))
   }
 
   test("weight of a larger tree") {
@@ -27,7 +48,7 @@ class HuffmanSuite extends FunSuite {
 
   test("chars of a larger tree") {
     new TestData {
-      assert(chars(codeTree2) === List('a','b','d'))
+      assert(chars(codeTree2) === List('a', 'b', 'd'))
     }
   }
 
@@ -46,7 +67,7 @@ class HuffmanSuite extends FunSuite {
   }
 
   test("makeOrderedLeafList for some frequency table") {
-    assert(makeOrderedLeafList(List(('t', 2), ('e', 1), ('x', 3))) === List(Leaf('e',1), Leaf('t',2), Leaf('x',3)))
+    assert(makeOrderedLeafList(List(('t', 2), ('e', 1), ('x', 3))) === List(Leaf('e', 1), Leaf('t', 2), Leaf('x', 3)))
   }
 
   test("singleton") {
@@ -67,14 +88,54 @@ class HuffmanSuite extends FunSuite {
 
   test("decode") {
     new TestData {
-//      assert(decode(codeTree3, List[Bit](1, 0, 1, 1)) === List('d'))
-      assert(decode(codeTree3, List[Bit](1, 0, 1, 1, 1, 0, 1, 1)) === List('d', 'd'))
+      assert(decode(codeTree3, List[Bit](1, 0, 1, 1)) === "d".toList)
+      assert(decode(codeTree3, List[Bit](1, 0, 1, 1, 1, 0, 1, 1)) === "dd".toList)
+      assert(decode(codeTree3, List[Bit](1, 0, 1, 1, 1, 0, 1, 1, 0)) === "dda".toList)
+      assert(decode(codeTree3, List[Bit](1, 0, 0, 0, 1, 0, 1, 0)) === "bac".toList)
+      assert(decode(frenchCode, secret) === "huffmanestcool".toList)
     }
   }
 
-  ignore("decode and encode a very short text should be identity") {
+  test("decode and encode") {
     new TestData {
+      val encode3 = encode(codeTree3) _
+      assert(encode3(List('d')) === List(1, 0, 1, 1))
+      assert(encode3(List('a')) === List(0))
+      assert(encode3(List('a', 'd')) === List(0) ::: List(1, 0, 1, 1))
       assert(decode(codeTree1, encode(codeTree1)("ab".toList)) === "ab".toList)
+      assert(encode(frenchCode)("huffmanestcool".toList) === secret)
+      assert(decode(frenchCode, encode(frenchCode)("huffmanestcool".toList)) === "huffmanestcool".toList)
+    }
+  }
+
+
+  test("codeBits CodeTable") {
+    new TestData {
+      val codeBits1 = codeBits(table1) _
+
+      assert(codeBits1('a') === List(1, 1, 1))
+      assert(codeBits1('b') === List(1, 0, 1))
+    }
+  }
+
+  test("convert CodeTable") {
+    new TestData {
+      val codBits3 = codeBits(convert(codeTree3)) _
+
+      assert(codBits3('a') === List(0))
+      assert(codBits3('d') === List(1, 0, 1, 1))
+    }
+  }
+
+  test("decode and quickEncode") {
+    new TestData {
+      val encode3 = quickEncode(codeTree3) _
+      assert(encode3(List('d')) === List(1, 0, 1, 1))
+      assert(encode3(List('a')) === List(0))
+      assert(encode3(List('a', 'd')) === List(0) ::: List(1, 0, 1, 1))
+      assert(decode(codeTree1, quickEncode(codeTree1)("ab".toList)) === "ab".toList)
+      assert(quickEncode(frenchCode)("huffmanestcool".toList) === secret)
+      assert(decode(frenchCode, quickEncode(frenchCode)("huffmanestcool".toList)) === "huffmanestcool".toList)
     }
   }
 }

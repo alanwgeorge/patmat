@@ -83,10 +83,9 @@ object Huffman {
   def times(chars: List[Char]): List[(Char, Int)] = {
     def recurseIncrement(target: Char, list: List[(Char, Int)]): List[(Char, Int)] = {
       list match {
-        case (c, n) :: xs => {
+        case (c, n) :: xs =>
           if (c == target) (target, n + 1) :: recurseIncrement(target, xs)
           else (c, n) :: recurseIncrement(target, xs)
-        }
         case Nil => Nil
       }
     }
@@ -211,7 +210,7 @@ object Huffman {
 
   /**
    * What does the secret message say? Can you decode it?
-   * For the decoding use the `frenchCode' Huffman tree defined above.
+   * For the decoding use the 'frenchCode' Huffman tree defined above.
    */
   val secret: List[Bit] = List(0,0,1,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,1,1,0,1,0,1,1,0,0,1,1,1,1,1,0,1,0,1,1,0,0,0,0,1,0,1,1,1,0,0,1,0,0,1,0,0,0,1,0,0,0,1,0,1)
 
@@ -229,7 +228,18 @@ object Huffman {
    * into a sequence of bits.
    */
   def encode(tree: CodeTree)(text: List[Char]): List[Bit] = {
-    List(1)
+    def encodeSubTree(textTodo: List[Char], subTree: CodeTree, wholeTree: CodeTree, accumBits: List[Bit]): List[Bit] = {
+      subTree match {
+        case Leaf(c, _) => if (c == textTodo.head) {
+          if (textTodo.tail != Nil) accumBits ::: encodeSubTree(textTodo.tail, wholeTree, wholeTree, Nil)
+          else accumBits
+        } else {
+          Nil
+        }
+        case Fork(l, r, _, _) => encodeSubTree(textTodo, l, wholeTree, accumBits :+ 0) ::: encodeSubTree(textTodo, r, wholeTree, accumBits :+ 1)
+      }
+    }
+    encodeSubTree(text, tree, tree, Nil)
   }
 
 
@@ -241,7 +251,14 @@ object Huffman {
    * This function returns the bit sequence that represents the character `char` in
    * the code table `table`.
    */
-  def codeBits(table: CodeTable)(char: Char): List[Bit] = ???
+  def codeBits(table: CodeTable)(char: Char): List[Bit] = {
+    val TheChar: Char = char
+    table match {
+      case (TheChar, bits) :: xs => bits
+      case x :: xs => codeBits(xs)(char)
+      case _ => Nil
+    }
+  }
 
   /**
    * Given a code tree, create a code table which contains, for every character in the
@@ -251,14 +268,20 @@ object Huffman {
    * a valid code tree that can be represented as a code table. Using the code tables of the
    * sub-trees, think of how to build the code table for the entire tree.
    */
-  def convert(tree: CodeTree): CodeTable = ???
+  def convert(tree: CodeTree): CodeTable = {
+    def convertSubTree(subTree: CodeTree, wholeTree: CodeTree, bits: List[Bit], accumCodeTable: CodeTable): CodeTable = subTree match {
+      case Leaf(c, n) => (c, bits) :: accumCodeTable
+      case Fork(l, r, _, _) => mergeCodeTables(convertSubTree(l, wholeTree, bits :+ 0, accumCodeTable), convertSubTree(r, wholeTree, bits :+ 1, accumCodeTable))
+    }
+    convertSubTree(tree, tree, Nil, Nil)
+  }
 
   /**
    * This function takes two code tables and merges them into one. Depending on how you
    * use it in the `convert` method above, this merge method might also do some transformations
    * on the two parameter code tables.
    */
-  def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = ???
+  def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = a ::: b
 
   /**
    * This function encodes `text` according to the code tree `tree`.
@@ -266,7 +289,16 @@ object Huffman {
    * To speed up the encoding process, it first converts the code tree to a code table
    * and then uses it to perform the actual encoding.
    */
-  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = {
+    val codeBits1 = codeBits(convert(tree))_
+    def encode(textTodo: List[Char]): List[Bit] = textTodo match {
+        case Nil => Nil
+        case x :: Nil => codeBits1(x)
+        case x :: xs => codeBits1(x) ::: encode(xs)
+      }
+
+    encode(text)
+  }
 }
 
 object Main extends App {
@@ -282,11 +314,4 @@ object Main extends App {
   def tree = makeCodeTree(a, makeCodeTree(makeCodeTree(b, makeCodeTree(c, d)), makeCodeTree(makeCodeTree(e, f),makeCodeTree(g, h))))
 
   println(tree)
-}
-
-object Foo extends App {
-  val codeTree1: CodeTree = Fork(Leaf('a',2), Leaf('b',3), List('a','b'), 5)
-  val codeTree2: CodeTree = Fork(Fork(Leaf('a',2), Leaf('b',3), List('a','b'), 5), Leaf('d',4), List('a','b','d'), 9)
-
-  println(decode(codeTree2, List(1, 1)))
 }

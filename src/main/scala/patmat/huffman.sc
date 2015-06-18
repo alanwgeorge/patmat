@@ -20,10 +20,9 @@ pairList.exists {
 def recurseIncrement(Target: Char, list: List[(Char, Int)]): List[(Char, Int)] = {
   list match {
     case (Target, n) :: xs => println("bingo"); (Target, n + 1) :: recurseIncrement(Target, xs)
-    case x :: xs =>  {
+    case x :: xs =>
       if (x._1 == Target) (Target, x._2 + 1) :: recurseIncrement(Target, xs)
       else x :: recurseIncrement(Target, xs)
-    }
     case Nil => Nil
   }
 }
@@ -38,4 +37,12 @@ def u = until(singleton, combine)_
 u(List(codeTree1, codeTree2))
 createCodeTree(helloChars)
 decode(frenchCode, secret)
+val table1: CodeTable = List(('a', List(1,1,1)), ('b', List(1,0,1)))
+def test(table: CodeTable, C: Char): (Char, List[Bit]) = table match {
+  case (C, b) :: xs => println(b); ('a', Nil)
+  case x :: xs => println(x); test(xs, C)
+  case _ => ('0', Nil)
+}
+
+test(table1, 'a')
 
