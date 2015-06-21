@@ -52,6 +52,14 @@ object Huffman {
    */
   def string2Chars(str: String): List[Char] = str.toList
 
+  def pack[T](packList: List[T]): List[List[T]] = {
+    packList match {
+      case Nil => Nil
+      case x :: xs => val (first, rest) = packList span (y => y == x)
+        first :: pack(rest)
+    }
+  }
+
   /**
    * This function computes for each unique character in the list `chars` the number of
    * times it occurs. For example, the invocation
@@ -80,22 +88,8 @@ object Huffman {
    *       println("integer is  : "+ theInt)
    *   }
    */
-  def times(chars: List[Char]): List[(Char, Int)] = {
-    def recurseIncrement(target: Char, list: List[(Char, Int)]): List[(Char, Int)] = {
-      list match {
-        case (c, n) :: xs =>
-          if (c == target) (target, n + 1) :: recurseIncrement(target, xs)
-          else (c, n) :: recurseIncrement(target, xs)
-        case Nil => Nil
-      }
-    }
-
-    if (chars.isEmpty) Nil
-    else {
-      val accumTimes: List[(Char, Int)] = times(chars.tail)
-      if (accumTimes.exists(x => x._1 == chars.head)) recurseIncrement(chars.head, accumTimes)
-      else  (chars.head, 1) :: accumTimes
-    }
+  def times(list: List[Char]): List[(Char, Int)] = {
+    pack (list.sorted) map (x => (x.head, x.length))
   }
 
   /**
@@ -140,15 +134,21 @@ object Huffman {
    * unchanged.
    */
   def combine(trees: List[CodeTree]): List[CodeTree] = {
-    trees match {
-      case Nil => trees
-      case x :: Nil => trees
-      case Leaf(c1, w1) :: Leaf(c2, w2) :: xs => Fork(Leaf(c1, w1), Leaf(c2, w2), List(c1, c2), w1 + w2) :: xs
-      case Fork(left, right, chars, w1) :: Leaf(c, w2) :: xs => Fork(Fork(left, right, chars, w1), Leaf(c, w2), c :: chars, w1 + w2) :: xs
-      case Leaf(c, w2) :: Fork(left, right, chars, w1) :: xs => Fork(Leaf(c, w2), Fork(left, right, chars, w1), c :: chars, w1 + w2) :: xs
-      case Fork(left1, right1, chars1, w1) :: Fork(left2, right2, chars2, w2) :: xs => Fork(Fork(left1, right1, chars1, w1), Fork(left2, right2, chars2, w2), chars1 ::: chars2, w1 + w2) :: xs
-      case _ => throw new IllegalStateException("match failed")
+    def insert(element: CodeTree, sortedTrees: List[CodeTree]): List[CodeTree] = {
+      val (lt, gt) = sortedTrees span(x => weight(x) < weight(element))
+      lt ::: (element :: gt)
     }
+
+    if (singleton(trees)) trees
+    else
+      trees match {
+        case Nil => trees
+        case Leaf(c1, w1) :: Leaf(c2, w2) :: xs => insert(Fork(Leaf(c1, w1), Leaf(c2, w2), List(c1, c2), w1 + w2), xs)
+        case Fork(left, right, chars, w1) :: Leaf(c, w2) :: xs => insert(Fork(Fork(left, right, chars, w1), Leaf(c, w2), c :: chars, w1 + w2), xs)
+        case Leaf(c, w2) :: Fork(left, right, chars, w1) :: xs => insert(Fork(Leaf(c, w2), Fork(left, right, chars, w1), c :: chars, w1 + w2), xs)
+        case Fork(left1, right1, chars1, w1) :: Fork(left2, right2, chars2, w2) :: xs => insert(Fork(Fork(left1, right1, chars1, w1), Fork(left2, right2, chars2, w2), chars1 ::: chars2, w1 + w2), xs)
+        case _ => throw new IllegalStateException("match failed")
+      }
   }
 
   /**

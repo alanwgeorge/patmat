@@ -12,30 +12,22 @@ class HuffmanSuite extends FunSuite {
 
   trait TestData {
     def a = Leaf('a', 8)
-
     def b = Leaf('b', 3)
-
     def c = Leaf('c', 1)
-
     def d = Leaf('d', 1)
-
     def e = Leaf('e', 1)
-
     def f = Leaf('f', 1)
-
     def g = Leaf('g', 1)
-
     def h = Leaf('h', 1)
 
-
     val l1: List[Char] = List('a', 'b', 'a', 'c', 'd', 'a')
+    val l2: List[Char] = "Lorem ipsum dolor sit amet, cu his mutat ridens. Ea oratio omnesque vix. Porro aliquam principes ne sed, te maiorum assentior eos. Dicam mediocrem at sea, quod doming ne sit. Ex eam facilisis patrioque vulputate, ornatus moderatius quo te. Ad mel aliquam voluptua scripserit.".toList
     val codeTree1: CodeTree = Fork(Leaf('a', 2), Leaf('b', 3), List('a', 'b'), 5)
     val codeTree2: CodeTree = Fork(Fork(Leaf('a', 2), Leaf('b', 3), List('a', 'b'), 5), Leaf('d', 4), List('a', 'b', 'd'), 9)
     val codeTree3 = makeCodeTree(a, makeCodeTree(makeCodeTree(b, makeCodeTree(c, d)), makeCodeTree(makeCodeTree(e, f), makeCodeTree(g, h))))
     val leafList1: List[Leaf] = List(Leaf('a', 1))
     val leafList2: List[Leaf] = List(Leaf('a', 2), Leaf('b', 3), Leaf('c', 4), Leaf('z', 8), Leaf('g', 10), Leaf('h', 12))
     val leaflist3 = List(Leaf('e', 1), Leaf('t', 2), Leaf('x', 4))
-
 
     val table1: CodeTable = List(('a', List(1, 1, 1)), ('b', List(1, 0, 1)))
   }
@@ -80,9 +72,16 @@ class HuffmanSuite extends FunSuite {
   test("combine of some leaf list") {
     new TestData {
       assert(combine(leaflist3) === List(Fork(Leaf('e', 1), Leaf('t', 2), List('e', 't'), 3), Leaf('x', 4)))
-      assert(combine(makeOrderedLeafList(times(l1))) === List(Fork(Leaf('b', 1), Leaf('c', 1), List('b', 'c'), 2), Leaf('d', 1), Leaf('a', 3)))
+      assert(combine(makeOrderedLeafList(times(l1))) === List(Leaf('d', 1), Fork(Leaf('b', 1), Leaf('c', 1), List('b', 'c'), 2) , Leaf('a', 3)))
       assert(combine(leafList1) === leafList1)
       assert(combine(Nil) === Nil)
+    }
+  }
+
+  test("createCodeTree") {
+    new TestData {
+      assert(weight(createCodeTree(l1)) === l1.length)
+      assert(weight(createCodeTree(l2)) === l2.length)
     }
   }
 
